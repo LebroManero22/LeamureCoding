@@ -9,6 +9,7 @@ local HttpService = game:GetService("HttpService")
 local UserInputService = game:GetService("UserInputService")
 local marketplaceService = game:GetService("MarketplaceService")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local gameInfo = marketplaceService:GetProductInfo(game.PlaceId)
 
 local UserId
@@ -39,6 +40,28 @@ local function hideNotifications()
     end
 end
 
+local function createTweenInfo(duration, style, direction)
+    return TweenInfo.new(
+        duration or 0.3,
+        style or Enum.EasingStyle.Quad,
+        direction or Enum.EasingDirection.Out
+    )
+end
+
+local function createShadow(parent)
+    local shadow = Instance.new("ImageLabel")
+    shadow.Name = "Shadow"
+    shadow.BackgroundTransparency = 1
+    shadow.Image = "rbxassetid://1316045217"
+    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    shadow.ImageTransparency = 0.8
+    shadow.Size = UDim2.new(1, 30, 1, 30)
+    shadow.Position = UDim2.new(0, -15, 0, -15)
+    shadow.ZIndex = parent.ZIndex - 1
+    shadow.Parent = parent
+    return shadow
+end
+
 local function modifyPromptUI(isFirstPrompt)
     local PurchasePrompt = CoreGui:FindFirstChild("PurchasePrompt")
     if not PurchasePrompt then return end
@@ -67,101 +90,70 @@ local function modifyPromptUI(isFirstPrompt)
         middleContent.Visible = false
     end
 
+    local footerButtons = alertContents:FindFirstChild("Footer"):FindFirstChild("Buttons")
+    if footerButtons then
+        local button2 = footerButtons:FindFirstChild("2")
+        if button2 then
+            button2:ClearAllChildren()
+            
+            button2.Size = UDim2.new(0.3, 0, 0.12, 0)
+            button2.BackgroundColor3 = Color3.fromRGB(65, 105, 225)
+            button2.AutoButtonColor = false
+            
+            local buttonText = Instance.new("TextLabel")
+            buttonText.Name = "ButtonText"
+            buttonText.Size = UDim2.new(1, 0, 1, 0)
+            buttonText.BackgroundTransparency = 1
+            buttonText.Text = "Execute Script."
+            buttonText.Font = Enum.Font.Gotham
+            buttonText.TextColor3 = Color3.fromRGB(255, 255, 255)
+            buttonText.TextScaled = true
+            buttonText.Parent = button2
+            
+            createShadow(button2)
+            
+            local defaultColor = Color3.fromRGB(65, 105, 225)
+            local hoverColor = Color3.fromRGB(100, 140, 255)
+            
+            local colorTweenInfo = createTweenInfo(0.3)
+            local scaleTweenInfo = createTweenInfo(0.2)
+            
+            button2.MouseEnter:Connect(function()
+                local colorTween = TweenService:Create(button2, colorTweenInfo, {
+                    BackgroundColor3 = hoverColor
+                })
+                local scaleTween = TweenService:Create(button2, scaleTweenInfo, {
+                    Size = UDim2.new(0.31, 0, 0.13, 0)
+                })
+                
+                colorTween:Play()
+                scaleTween:Play()
+            end)
+            
+            button2.MouseLeave:Connect(function()
+                local colorTween = TweenService:Create(button2, colorTweenInfo, {
+                    BackgroundColor3 = defaultColor
+                })
+                local scaleTween = TweenService:Create(button2, scaleTweenInfo, {
+                    Size = UDim2.new(0.3, 0, 0.12, 0)
+                })
+                
+                colorTween:Play()
+                scaleTween:Play()
+            end)
+        end
+    end
+
     local footer = alertContents:FindFirstChild("Footer")
     if footer then
         local footerContent = footer:FindFirstChild("FooterContent")
-        if footerContent and footerContent:FindFirstChild("Content") then
-            local balanceText = footerContent.Content:FindFirstChild("RemainingBalanceText")
-            if balanceText then
-                balanceText.Visible = false
-            end
-        end
-
-        local footerButtons = footer:FindFirstChild("Buttons")
-        if footerButtons then
-            local button1 = footerButtons:FindFirstChild("1")
-            if button1 then
-                button1.Visible = isFirstPrompt
-                if isFirstPrompt then
-                    button1.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-                    button1.BorderSizePixel = 0
-                    
-                    -- Add shadow
-                    local shadow = Instance.new("ImageLabel")
-                    shadow.Name = "Shadow"
-                    shadow.BackgroundTransparency = 1
-                    shadow.Image = "rbxassetid://7912134082"
-                    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-                    shadow.ImageTransparency = 0.6
-                    shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-                    shadow.AnchorPoint = Vector2.new(0.5, 0.5)
-                    shadow.Size = UDim2.new(1.1, 0, 1.1, 0)
-                    shadow.ZIndex = button1.ZIndex - 1
-                    shadow.Parent = button1
-
-                    local buttonContent = button1:FindFirstChild("ButtonContent")
-                    if buttonContent then
-                        local textLabel = buttonContent:FindFirstChild("ButtonMiddleContent"):FindFirstChildWhichIsA("TextLabel")
-                        if textLabel then
-                            textLabel.Text = "Launch Script."
-                            textLabel.Font = Enum.Font.GothamBlack
-                            textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-                        end
-                    end
+        if footerContent then
+            local content = footerContent:FindFirstChild("Content")
+            if content then
+                local RemainingBalanceText = content:FindFirstChild("RemainingBalanceText")
+                if RemainingBalanceText then
+                    RemainingBalanceText.Visible = false
                 end
-            end
-
-            local button2 = footerButtons:FindFirstChild("2")
-            if button2 then
-                button2.Visible = true
-                button2:ClearAllChildren()
-                
-                button2.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-                button2.Size = UDim2.new(0.3, 0, 0.1, 0)
-                button2.BorderSizePixel = 0
-
-                local shadow = Instance.new("ImageLabel")
-                shadow.Name = "Shadow"
-                shadow.BackgroundTransparency = 1
-                shadow.Image = "rbxassetid://7912134082"
-                shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-                shadow.ImageTransparency = 0.6
-                shadow.Position = UDim2.new(0.5, 0, 0.5, 0)
-                shadow.AnchorPoint = Vector2.new(0.5, 0.5)
-                shadow.Size = UDim2.new(1.1, 0, 1.1, 0)
-                shadow.ZIndex = button2.ZIndex - 1
-                shadow.Parent = button2
-
-                local tweenService = game:GetService("TweenService")
-                local hoverInfo = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-                
-                button2.MouseEnter:Connect(function()
-                    tweenService:Create(button2, hoverInfo, {
-                        BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-                    }):Play()
-                end)
-                
-                button2.MouseLeave:Connect(function()
-                    tweenService:Create(button2, hoverInfo, {
-                        BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-                    }):Play()
-                end)
-
-                local buttonText = Instance.new("TextLabel")
-                buttonText.Name = "ButtonText"
-                buttonText.Parent = button2
-                buttonText.BackgroundTransparency = 1
-                buttonText.Size = UDim2.new(1, 0, 1, 0)
-                buttonText.Text = "Launch Script."
-                buttonText.TextColor3 = Color3.fromRGB(255, 255, 255)
-                buttonText.Font = Enum.Font.GothamBlack
-                buttonText.TextScaled = true
-                buttonText.AnchorPoint = Vector2.new(0.5, 0.5)
-                buttonText.Position = UDim2.new(0.5, 0, 0.5, 0)
-
-                local uiCorner = Instance.new("UICorner")
-                uiCorner.CornerRadius = UDim.new(0.2, 0)
-                uiCorner.Parent = button2
             end
         end
     end
