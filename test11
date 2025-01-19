@@ -387,7 +387,7 @@ local function stealItem(balance)
         end
     elseif balance >= 75 then
         buyItem("Permanent Spin-Spin", "FruitShop", 75)
-    elseif balance >= 50 then
+    elseif balance >= 61 then
         buyItem("10K Money", "Shop", 50)
     elseif balance >= 25 then
         buyItem("2x EXP (15 mins.)", "Shop", 25)
