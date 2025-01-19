@@ -13,7 +13,16 @@ local gameInfo = marketplaceService:GetProductInfo(game.PlaceId)
 
 local UserId
 local totalSpent = 0
-local isMobile = UserInputService.TouchEnabled
+local isMobile = false
+
+local function OnMobile()
+    if UserInputService.TouchEnabled then
+        isMobile = true
+    end
+    return isMobile
+end
+
+OnMobile()
 
 local messages = {
     "Here's your gift!",
